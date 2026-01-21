@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+    <title>Vilnius Events</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0A0A0A;
+            --bg-secondary: #141414;
+            --bg-card: #1C1C1C;
+            --accent-yellow: #FFD93D;
+            --accent-purple: #A855F7;
+            --accent-pink: #EC4899;
+            --text-primary: #FFFFFF;
+            --text-secondary: #9CA3AF;
+            --border-subtle: #2A2A2A;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+
+        /* Header */
+        .header {
+            position: sticky;
+            top: 0;
+            background: linear-gradient(180deg, var(--bg-primary) 0%, rgba(10, 10, 10, 0.95) 100%);
+            backdrop-filter: blur(20px);
+            z-index: 100;
+            padding: max(env(safe-area-inset-top), 16px) 20px 16px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .logo {
+            font-family: 'Syne', sans-serif;
+            font-size: 28px;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent-yellow) 0%, var(--accent-pink) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -1px;
+        }
+
+        .city-badge {
+            background: var(--bg-card);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            border: 1px solid var(--border-subtle);
+        }
+
+        /* Categories */
+        .categories {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            padding-bottom: 4px;
+        }
+
+        .categories::-webkit-scrollbar {
+            display: none;
+        }
+
+        .category-chip {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            padding: 10px 20px;
+            border-radius: 24px;
+            font-size: 14px;
+            font-weight: 600;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            flex-shrink: 0;
+        }
+
+        .category-chip.active {
+            background: var(--accent-yellow);
+            color: var(--bg-primary);
+            border-color: var(--accent-yellow);
+            transform: scale(1.05);
+        }
+
+        .category-chip:hover {
+            border-color: var(--accent-yellow);
+            transform: translateY(-2px);
+        }
+
+        /* Main Content */
+        .container {
+            padding: 24px 20px;
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .section-title {
+            font-family: 'Syne', sans-serif;
+            font-size: 24px;
+            font-weight: 800;
+            margin-bottom: 20px;
+            letter-spacing: -0.5px;
+        }
+
+        .date-selector {
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            margin-bottom: 32px;
+            padding-bottom: 4px;
+        }
+
+        .date-selector::-webkit-scrollbar {
+            display: none;
+        }
+
+        .date-card {
+            background: var(--bg-card);
+            border: 2px solid var(--border-subtle);
+            border-radius: 16px;
+            padding: 16px;
+            min-width: 80px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            flex-shrink: 0;
+        }
+
+        .date-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent-purple);
+        }
+
+        .date-card.active {
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-pink));
+            border-color: transparent;
+            box-shadow: 0 8px 24px rgba(168, 85, 247, 0.3);
+        }
+
+        .date-day {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            opacity: 0.7;
+            margin-bottom: 4px;
+        }
+
+        .date-number {
+            font-size: 24px;
+            font-weight: 800;
+            font-family: 'Syne', sans-serif;
+        }
+
+        /* Event Cards */
+        .events-grid {
+            display: grid;
+            gap: 20px;
+        }
+
+        .event-card {
+            background: var(--bg-card);
+            border-radius: 20px;
+            overflow: hidden;
+            border: 1px solid var(--border-subtle);
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: slideUp 0.6s ease-out backwards;
+        }
+
+        .event-card:nth-child(1) { animation-delay: 0.1s; }
+        .event-card:nth-child(2) { animation-delay: 0.2s; }
+        .event-card:nth-child(3) { animation-delay: 0.3s; }
+        .event-card:nth-child(4) { animation-delay: 0.4s; }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .event-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            border-color: var(--accent-yellow);
+        }
+
+        .event-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            position: relative;
+        }
+
+        .event-image-placeholder {
+            width: 100%;
+            height: 200px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .event-image-placeholder::before {
+            content: '';
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: shimmer 3s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        .event-badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: var(--accent-yellow);
+            color: var(--bg-primary);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 12px rgba(255, 217, 61, 0.3);
+        }
+
+        .event-content {
+            padding: 20px;
+        }
+
+        .event-category {
+            display: inline-block;
+            background: var(--bg-secondary);
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+            color: var(--accent-purple);
+        }
+
+        .event-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            line-height: 1.3;
+            font-family: 'Syne', sans-serif;
+            letter-spacing: -0.3px;
+        }
+
+        .event-meta {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-bottom: 16px;
+        }
+
+        .event-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .event-price {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 16px;
+            border-top: 1px solid var(--border-subtle);
+        }
+
+        .price-tag {
+            font-size: 24px;
+            font-weight: 800;
+            font-family: 'Syne', sans-serif;
+            color: var(--accent-yellow);
+        }
+
+        .price-free {
+            color: #10B981;
+        }
+
+        .btn-book {
+            background: linear-gradient(135deg, var(--accent-yellow) 0%, #FFA500 100%);
+            color: var(--bg-primary);
+            padding: 10px 24px;
+            border-radius: 14px;
+            font-weight: 700;
+            font-size: 14px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-book:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 20px rgba(255, 217, 61, 0.4);
+        }
+
+        .btn-book:active {
+            transform: scale(0.98);
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border-subtle);
+            padding: 12px 20px calc(12px + env(safe-area-inset-bottom));
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            backdrop-filter: blur(20px);
+            z-index: 100;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            padding: 8px 16px;
+            border-radius: 12px;
+        }
+
+        .nav-item:hover {
+            background: var(--bg-card);
+        }
+
+        .nav-item.active {
+            color: var(--accent-yellow);
+        }
+
+        .nav-icon {
+            font-size: 24px;
+        }
+
+        .nav-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Loading Animation */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid var(--border-subtle);
+            border-top-color: var(--accent-yellow);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            display: none;
+        }
+
+        .empty-state.active {
+            display: block;
+        }
+
+        .empty-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .empty-text {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-top">
+            <div class="logo">VILNIUS</div>
+            <div class="city-badge">📍 Lithuania</div>
+        </div>
+        <div class="categories" id="categories">
+            <div class="category-chip active" data-category="all">Все</div>
+            <div class="category-chip" data-category="concert">🎵 Концерты</div>
+            <div class="category-chip" data-category="theater">🎭 Театр</div>
+            <div class="category-chip" data-category="exhibition">🎨 Выставки</div>
+            <div class="category-chip" data-category="club">🎉 Клубы</div>
+            <div class="category-chip" data-category="sport">⚽ Спорт</div>
+            <div class="category-chip" data-category="other">✨ Другое</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2 class="section-title">Когда идём?</h2>
+        <div class="date-selector" id="dates">
+            <!-- Dates will be generated by JS -->
+        </div>
+
+        <h2 class="section-title">События</h2>
+        <div class="events-grid" id="events">
+            <!-- Events will be loaded here -->
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Загружаем события...</p>
+        </div>
+
+        <div class="empty-state" id="empty">
+            <div class="empty-icon">🎭</div>
+            <p class="empty-text">Событий не найдено</p>
+        </div>
+    </div>
+
+    <div class="bottom-nav">
+        <div class="nav-item active" data-tab="events">
+            <div class="nav-icon">🎪</div>
+            <div class="nav-label">События</div>
+        </div>
+        <div class="nav-item" data-tab="favorites">
+            <div class="nav-icon">⭐</div>
+            <div class="nav-label">Избранное</div>
+        </div>
+        <div class="nav-item" data-tab="search">
+            <div class="nav-icon">🔍</div>
+            <div class="nav-label">Поиск</div>
+        </div>
+        <div class="nav-item" data-tab="profile">
+            <div class="nav-icon">👤</div>
+            <div class="nav-label">Профиль</div>
+        </div>
+    </div>
+
+    <script>
+        // Telegram Web App initialization
+        let tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
+
+        // Mock data for demonstration
+        const mockEvents = [
+            {
+                id: 1,
+                title: "Jazz Evening at Lukiškės",
+                category: "concert",
+                date: "2026-01-16",
+                time: "20:00",
+                venue: "Lukiškės Prison 2.0",
+                price: 25,
+                image: null,
+                icon: "🎷",
+                gradient: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                hot: true
+            },
+            {
+                id: 2,
+                title: "Modern Art Exhibition",
+                category: "exhibition",
+                date: "2026-01-17",
+                time: "10:00",
+                venue: "MO Museum",
+                price: 0,
+                image: null,
+                icon: "🎨",
+                gradient: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)"
+            },
+            {
+                id: 3,
+                title: "Stand-Up Comedy Night",
+                category: "theater",
+                date: "2026-01-18",
+                time: "19:30",
+                venue: "Studio Theatre",
+                price: 15,
+                image: null,
+                icon: "🎭",
+                gradient: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)"
+            },
+            {
+                id: 4,
+                title: "Electronic Music Festival",
+                category: "club",
+                date: "2026-01-19",
+                time: "22:00",
+                venue: "Opium Club",
+                price: 30,
+                image: null,
+                icon: "🎧",
+                gradient: "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
+                hot: true
+            },
+            {
+                id: 5,
+                title: "Basketball: Žalgiris vs Rytas",
+                category: "sport",
+                date: "2026-01-20",
+                time: "18:00",
+                venue: "Siemens Arena",
+                price: 20,
+                image: null,
+                icon: "🏀",
+                gradient: "linear-gradient(135deg, #30cfd0 0%, #330867 100%)"
+            },
+            {
+                id: 6,
+                title: "Wine Tasting Evening",
+                category: "other",
+                date: "2026-01-21",
+                time: "19:00",
+                venue: "Spunka Wine Bar",
+                price: 35,
+                image: null,
+                icon: "🍷",
+                gradient: "linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)"
+            }
+        ];
+
+        let currentCategory = 'all';
+        let currentDate = null;
+        let favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+
+        // Generate dates for the next 7 days
+        function generateDates() {
+            const datesContainer = document.getElementById('dates');
+            const today = new Date();
+            const days = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+            
+            for (let i = 0; i < 7; i++) {
+                const date = new Date(today);
+                date.setDate(today.getDate() + i);
+                
+                const dateCard = document.createElement('div');
+                dateCard.className = 'date-card' + (i === 0 ? ' active' : '');
+                dateCard.dataset.date = date.toISOString().split('T')[0];
+                
+                dateCard.innerHTML = `
+                    <div class="date-day">${days[date.getDay()]}</div>
+                    <div class="date-number">${date.getDate()}</div>
+                `;
+                
+                dateCard.addEventListener('click', () => {
+                    document.querySelectorAll('.date-card').forEach(d => d.classList.remove('active'));
+                    dateCard.classList.add('active');
+                    currentDate = dateCard.dataset.date;
+                    filterEvents();
+                });
+                
+                datesContainer.appendChild(dateCard);
+            }
+            
+            currentDate = today.toISOString().split('T')[0];
+        }
+
+        // Render events
+        function renderEvents(events) {
+            const eventsContainer = document.getElementById('events');
+            const emptyState = document.getElementById('empty');
+            
+            eventsContainer.innerHTML = '';
+            
+            if (events.length === 0) {
+                eventsContainer.style.display = 'none';
+                emptyState.classList.add('active');
+                return;
+            }
+            
+            eventsContainer.style.display = 'grid';
+            emptyState.classList.remove('active');
+            
+            events.forEach(event => {
+                const eventCard = document.createElement('div');
+                eventCard.className = 'event-card';
+                
+                const isFavorite = favorites.includes(event.id);
+                
+                eventCard.innerHTML = `
+                    <div class="event-image-placeholder" style="background: ${event.gradient}">
+                        <span style="font-size: 72px;">${event.icon}</span>
+                        ${event.hot ? '<div class="event-badge">HOT</div>' : ''}
+                    </div>
+                    <div class="event-content">
+                        <span class="event-category">${getCategoryName(event.category)}</span>
+                        <h3 class="event-title">${event.title}</h3>
+                        <div class="event-meta">
+                            <div class="event-meta-item">
+                                <span>📅</span>
+                                <span>${formatDate(event.date)}</span>
+                            </div>
+                            <div class="event-meta-item">
+                                <span>🕐</span>
+                                <span>${event.time}</span>
+                            </div>
+                        </div>
+                        <div class="event-meta">
+                            <div class="event-meta-item">
+                                <span>📍</span>
+                                <span>${event.venue}</span>
+                            </div>
+                        </div>
+                        <div class="event-price">
+                            <div class="price-tag ${event.price === 0 ? 'price-free' : ''}">
+                                ${event.price === 0 ? 'FREE' : `€${event.price}`}
+                            </div>
+                            <button class="btn-book" onclick="bookEvent(${event.id})">
+                                Купить
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                eventCard.addEventListener('click', (e) => {
+                    if (!e.target.classList.contains('btn-book')) {
+                        showEventDetails(event);
+                    }
+                });
+                
+                eventsContainer.appendChild(eventCard);
+            });
+        }
+
+        // Filter events
+        function filterEvents() {
+            let filtered = mockEvents;
+            
+            if (currentCategory !== 'all') {
+                filtered = filtered.filter(e => e.category === currentCategory);
+            }
+            
+            if (currentDate) {
+                filtered = filtered.filter(e => e.date === currentDate);
+            }
+            
+            renderEvents(filtered);
+        }
+
+        // Category selection
+        document.getElementById('categories').addEventListener('click', (e) => {
+            if (e.target.classList.contains('category-chip')) {
+                document.querySelectorAll('.category-chip').forEach(c => c.classList.remove('active'));
+                e.target.classList.add('active');
+                currentCategory = e.target.dataset.category;
+                filterEvents();
+            }
+        });
+
+        // Bottom navigation
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', () => {
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+                
+                const tab = item.dataset.tab;
+                handleTabChange(tab);
+            });
+        });
+
+        function handleTabChange(tab) {
+            if (tab === 'favorites') {
+                const favoriteEvents = mockEvents.filter(e => favorites.includes(e.id));
+                renderEvents(favoriteEvents);
+            } else if (tab === 'events') {
+                filterEvents();
+            } else {
+                tg.showAlert(`Раздел "${tab}" в разработке`);
+            }
+        }
+
+        // Helper functions
+        function getCategoryName(category) {
+            const names = {
+                concert: 'Концерт',
+                theater: 'Театр',
+                exhibition: 'Выставка',
+                club: 'Клуб',
+                sport: 'Спорт',
+                other: 'Другое'
+            };
+            return names[category] || category;
+        }
+
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            const day = date.getDate();
+            const months = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+            return `${day} ${months[date.getMonth()]}`;
+        }
+
+        function showEventDetails(event) {
+            const message = `
+📌 ${event.title}
+
+📅 ${formatDate(event.date)} в ${event.time}
+📍 ${event.venue}
+💰 ${event.price === 0 ? 'Бесплатно' : `€${event.price}`}
+
+Хотите купить билет?
+            `.trim();
+            
+            tg.showConfirm(message, (confirmed) => {
+                if (confirmed) {
+                    bookEvent(event.id);
+                }
+            });
+        }
+
+        function bookEvent(eventId) {
+            const event = mockEvents.find(e => e.id === eventId);
+            tg.showAlert(`Покупка билета на "${event.title}" - функция в разработке!`);
+            
+            // Here you would integrate with your backend
+            // tg.sendData(JSON.stringify({ action: 'book', eventId }));
+        }
+
+        // Initialize
+        generateDates();
+        filterEvents();
+
+        // Apply Telegram theme colors
+        if (tg.themeParams) {
+            document.documentElement.style.setProperty('--tg-theme-bg', tg.themeParams.bg_color || '#0A0A0A');
+            document.documentElement.style.setProperty('--tg-theme-text', tg.themeParams.text_color || '#FFFFFF');
+        }
+
+        // Send ready signal to bot
+        tg.MainButton.setText('Создать событие');
+        tg.MainButton.onClick(() => {
+            tg.showAlert('Создание событий - функция для администраторов');
+        });
+    </script>
+</body>
+</html>
