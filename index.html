@@ -514,83 +514,20 @@
         let tg = window.Telegram.WebApp;
         tg.ready();
         tg.expand();
+        const API_URL = 'https://web-production-75760.up.railway.app';
+let mockEvents = [];
 
-        // Mock data for demonstration
-        const mockEvents = [
-            {
-                id: 1,
-                title: "Jazz Evening at Lukiškės",
-                category: "concert",
-                date: "2026-01-16",
-                time: "20:00",
-                venue: "Lukiškės Prison 2.0",
-                price: 25,
-                image: null,
-                icon: "🎷",
-                gradient: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                hot: true
-            },
-            {
-                id: 2,
-                title: "Modern Art Exhibition",
-                category: "exhibition",
-                date: "2026-01-17",
-                time: "10:00",
-                venue: "MO Museum",
-                price: 0,
-                image: null,
-                icon: "🎨",
-                gradient: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)"
-            },
-            {
-                id: 3,
-                title: "Stand-Up Comedy Night",
-                category: "theater",
-                date: "2026-01-18",
-                time: "19:30",
-                venue: "Studio Theatre",
-                price: 15,
-                image: null,
-                icon: "🎭",
-                gradient: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)"
-            },
-            {
-                id: 4,
-                title: "Electronic Music Festival",
-                category: "club",
-                date: "2026-01-19",
-                time: "22:00",
-                venue: "Opium Club",
-                price: 30,
-                image: null,
-                icon: "🎧",
-                gradient: "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
-                hot: true
-            },
-            {
-                id: 5,
-                title: "Basketball: Žalgiris vs Rytas",
-                category: "sport",
-                date: "2026-01-20",
-                time: "18:00",
-                venue: "Siemens Arena",
-                price: 20,
-                image: null,
-                icon: "🏀",
-                gradient: "linear-gradient(135deg, #30cfd0 0%, #330867 100%)"
-            },
-            {
-                id: 6,
-                title: "Wine Tasting Evening",
-                category: "other",
-                date: "2026-01-21",
-                time: "19:00",
-                venue: "Spunka Wine Bar",
-                price: 35,
-                image: null,
-                icon: "🍷",
-                gradient: "linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)"
-            }
+async function loadEventsFromAPI() {
+    try {
+        const response = await fetch(`${API_URL}/api/events`);
+        mockEvents = await response.json();
+        filterEvents();
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+loadEventsFromAPI();
         ];
 
         let currentCategory = 'all';
