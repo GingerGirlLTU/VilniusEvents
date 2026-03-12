@@ -261,7 +261,7 @@
         .event-badge {
             position: absolute;
             top: 12px;
-            right: 12px;
+            left: 12px;
             background: var(--accent-yellow);
             color: var(--bg-primary);
             padding: 6px 14px;
@@ -271,6 +271,35 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
             box-shadow: 0 4px 12px rgba(255, 217, 61, 0.3);
+        }
+
+        .fav-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            border: none;
+            border-radius: 50%;
+            width: 38px;
+            height: 38px;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(4px);
+            transition: all 0.2s ease;
+            color: rgba(255, 255, 255, 0.6);
+            z-index: 2;
+        }
+
+        .fav-btn.active {
+            color: #FFD93D;
+            background: rgba(255, 217, 61, 0.25);
+        }
+
+        .fav-btn:hover {
+            transform: scale(1.15);
         }
 
         .event-content {
@@ -603,7 +632,8 @@ loadEventsFromAPI();
                 eventCard.innerHTML = `
                     <div class="event-image-placeholder" style="background: ${event.gradient}">
                         <span style="font-size: 72px;">${event.icon}</span>
-                        ${event.hot ? '<div class="event-badge">HOT</div>' : ''}
+                        ${event.is_hot ? '<div class="event-badge">HOT</div>' : ''}
+                        <button class="fav-btn ${isFavorite ? 'active' : ''}" data-fav-id="${event.id}">${isFavorite ? '★' : '☆'}</button>
                     </div>
                     <div class="event-content">
                         <span class="event-category">${getCategoryName(event.category)}</span>
@@ -635,12 +665,17 @@ loadEventsFromAPI();
                     </div>
                 `;
                 
+                eventCard.querySelector('.fav-btn').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    toggleFavorite(event.id, e.currentTarget);
+                });
+
                 eventCard.addEventListener('click', (e) => {
                     if (!e.target.classList.contains('btn-book')) {
                         showEventDetails(event);
                     }
                 });
-                
+
                 eventsContainer.appendChild(eventCard);
             });
         }
@@ -730,6 +765,32 @@ loadEventsFromAPI();
             });
         }
 
+        function toggleFavorite(eventId, btn) {
+            const idx = favorites.indexOf(eventId);
+            if (idx === -1) {
+                favorites.push(eventId);
+                btn.textContent = '★';
+                btn.classList.add('active');
+            } else {
+                favorites.splice(idx, 1);
+                btn.textContent = '☆';
+                btn.classList.remove('active');
+            }
+            localStorage.setItem('favorites', JSON.stringify(favorites));
+            updateFavCount();
+
+            const activeTab = document.querySelector('.nav-item.active')?.dataset.tab;
+            if (activeTab === 'favorites') {
+                handleTabChange('favorites');
+            }
+        }
+
+        function updateFavCount() {
+            const count = favorites.length;
+            const label = document.querySelector('[data-tab="favorites"] .nav-label');
+            label.textContent = count > 0 ? `Избранное (${count})` : 'Избранное';
+        }
+
         function bookEvent(eventId) {
             const event = mockEvents.find(e => e.id === eventId);
             tg.showAlert(`Покупка билета на "${event.title}" - функция в разработке!`);
@@ -741,6 +802,7 @@ loadEventsFromAPI();
         // Initialize
         generateDates();
         filterEvents();
+        updateFavCount();
 
         // Apply Telegram theme colors
         if (tg.themeParams) {
