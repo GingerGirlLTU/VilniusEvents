@@ -565,6 +565,15 @@ loadEventsFromAPI();
             currentDate = today.toISOString().split('T')[0];
         }
 
+        const categoryMeta = {
+            concert:    { icon: '🎵', gradient: 'linear-gradient(135deg, #667eea, #764ba2)' },
+            theater:    { icon: '🎭', gradient: 'linear-gradient(135deg, #f093fb, #f5576c)' },
+            exhibition: { icon: '🎨', gradient: 'linear-gradient(135deg, #4facfe, #00f2fe)' },
+            club:       { icon: '🎉', gradient: 'linear-gradient(135deg, #43e97b, #38f9d7)' },
+            sport:      { icon: '⚽', gradient: 'linear-gradient(135deg, #fa709a, #fee140)' },
+            other:      { icon: '✨', gradient: 'linear-gradient(135deg, #a18cd1, #fbc2eb)' },
+        };
+
         // Render events
         function renderEvents(events) {
             const eventsContainer = document.getElementById('events');
@@ -582,6 +591,10 @@ loadEventsFromAPI();
             emptyState.classList.remove('active');
             
             events.forEach(event => {
+                const meta = categoryMeta[event.category] || categoryMeta.other;
+                event.icon = event.icon || meta.icon;
+                event.gradient = event.gradient || meta.gradient;
+
                 const eventCard = document.createElement('div');
                 eventCard.className = 'event-card';
                 
