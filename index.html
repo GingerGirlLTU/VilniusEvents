@@ -558,6 +558,24 @@
             color: rgba(255, 255, 255, 0.75);
         }
 
+        .reg-banner.keyword-only {
+            background: rgba(255, 255, 255, 0.03);
+            box-shadow: none;
+            border-top-color: rgba(255, 255, 255, 0.07);
+        }
+
+        .reg-keyword-badge {
+            font-size: 12px;
+            color: #9CA3AF;
+            font-weight: 600;
+            padding: 6px 12px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.08);
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
         .reg-btn {
             background: linear-gradient(135deg, #FFD93D 0%, #EC4899 100%);
             border: none;
@@ -930,7 +948,9 @@ loadEventsFromAPI();
 
                 const isFavorite = favorites.includes(event.id);
                 const regUrls = parseRegistrationUrls(event.description, event.ticket_url);
-                const hasReg = regUrls.length > 0;
+                const hasRegUrl = regUrls.length > 0;
+                const hasRegKw = hasRegistrationKeyword(event.description);
+                const showRegBanner = hasRegUrl || hasRegKw;
                 const spots = parseSpots(event.description);
                 const isPulsing = spots !== null && spots < 10;
 
@@ -968,9 +988,11 @@ loadEventsFromAPI();
                             </button>
                         </div>
                     </div>
-                    ${hasReg ? `<div class="reg-banner">
+                    ${showRegBanner ? `<div class="reg-banner${hasRegUrl ? '' : ' keyword-only'}">
                         <div class="reg-banner-text">📝 Требуется регистрация</div>
-                        <button class="reg-btn${isPulsing ? ' pulse' : ''}">Зарегаться →</button>
+                        ${hasRegUrl
+                            ? `<button class="reg-btn${isPulsing ? ' pulse' : ''}">Зарегаться →</button>`
+                            : `<span class="reg-keyword-badge">Смотри описание</span>`}
                     </div>` : ''}
                 `;
 
@@ -979,7 +1001,7 @@ loadEventsFromAPI();
                     toggleFavorite(event.id, e.currentTarget);
                 });
 
-                if (hasReg) {
+                if (hasRegUrl) {
                     eventCard.querySelector('.reg-btn').addEventListener('click', (e) => {
                         e.stopPropagation();
                         showRegistrationSheet(event, regUrls, spots);
@@ -987,7 +1009,9 @@ loadEventsFromAPI();
                 }
 
                 eventCard.addEventListener('click', (e) => {
-                    if (!e.target.classList.contains('btn-book') && !e.target.classList.contains('reg-btn')) {
+                    if (!e.target.classList.contains('btn-book') &&
+                        !e.target.classList.contains('reg-btn') &&
+                        !e.target.classList.contains('reg-keyword-badge')) {
                         showEventDetails(event);
                     }
                 });
@@ -1129,6 +1153,13 @@ loadEventsFromAPI();
         }
 
         // ── REGISTRATION ─────────────────────────────────────────────
+        function hasRegistrationKeyword(text) {
+            if (!text) return false;
+            const keywords = ['регистрац', 'зарегистрир', 'записат', 'запись обязательна',
+                              'registration', 'register', 'sign up', 'signup', 'rsvp'];
+            return keywords.some(kw => text.toLowerCase().includes(kw));
+        }
+
         function classifyUrl(url) {
             if (/facebook\.com|fb\.com|fb\.me/i.test(url))
                 return { url, type: 'Facebook',     icon: '📘' };
