@@ -252,6 +252,47 @@
 
         .btn-save:active { opacity: 0.8; }
 
+        .card-preview-btns {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .preview-btn {
+            flex: 1;
+            padding: 8px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 700;
+            text-align: center;
+            text-decoration: none;
+        }
+
+        .preview-btn-buy { background: #1e3a4d; color: #64b5f6; }
+        .preview-btn-reg { background: #1e4d2d; color: #81c784; }
+
+        .form-check {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            background: #252525;
+            border-radius: 10px;
+        }
+
+        .form-check input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #4CAF50;
+        }
+
+        .form-check label {
+            margin: 0;
+            font-size: 14px;
+            color: #fff;
+            cursor: pointer;
+        }
+
         .toast {
             position: fixed;
             bottom: 30px;
@@ -365,8 +406,20 @@
             </div>
 
             <div class="form-group">
-                <label>Ссылка на билеты</label>
-                <input type="url" id="editTicketUrl">
+                <label>🎫 Ссылка на билеты (ticket_url)</label>
+                <input type="url" id="editTicketUrl" placeholder="https://...">
+            </div>
+
+            <div class="form-group">
+                <label>📝 Ссылка на регистрацию (registration_url)</label>
+                <input type="url" id="editRegistrationUrl" placeholder="https://...">
+            </div>
+
+            <div class="form-group">
+                <div class="form-check">
+                    <input type="checkbox" id="editRequiresRegistration">
+                    <label for="editRequiresRegistration">Требуется регистрация</label>
+                </div>
             </div>
 
             <div class="form-group">
@@ -515,6 +568,11 @@
                     ${price ? `<span class="badge price">${price}</span>` : ''}
                 </div>
                 ${e.description ? `<div class="card-desc">${e.description}</div>` : ''}
+                ${(e.ticket_url || e.registration_url) ? `
+                <div class="card-preview-btns">
+                    ${e.ticket_url ? `<a href="${e.ticket_url}" target="_blank" class="preview-btn preview-btn-buy">🎫 КУПИТЬ</a>` : ''}
+                    ${e.registration_url ? `<a href="${e.registration_url}" target="_blank" class="preview-btn preview-btn-reg">📝 ЗАРЕГАТЬСЯ</a>` : ''}
+                </div>` : ''}
                 <div class="card-actions">${actions}</div>
             </div>`;
         }).join('');
@@ -572,6 +630,8 @@
             document.getElementById('editAddress').value = e.address || '';
             document.getElementById('editPrice').value = e.price || 0;
             document.getElementById('editTicketUrl').value = e.ticket_url || '';
+            document.getElementById('editRegistrationUrl').value = e.registration_url || '';
+            document.getElementById('editRequiresRegistration').checked = !!e.requires_registration;
             document.getElementById('editImageUrl').value = e.image_url || '';
 
             document.getElementById('editModal').classList.add('open');
@@ -598,6 +658,8 @@
             address: document.getElementById('editAddress').value || null,
             price: parseFloat(document.getElementById('editPrice').value) || 0,
             ticket_url: document.getElementById('editTicketUrl').value || null,
+            registration_url: document.getElementById('editRegistrationUrl').value || null,
+            requires_registration: document.getElementById('editRequiresRegistration').checked,
             image_url: document.getElementById('editImageUrl').value || null,
             status: 'approved',
         };
