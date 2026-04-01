@@ -492,7 +492,11 @@
             },
             body: JSON.stringify(data)
         });
-        if (!res.ok) throw new Error(res.status);
+        if (!res.ok) {
+            const errText = await res.text();
+            console.error('Ответ сервера:', res.status, errText);
+            throw new Error(`${res.status}: ${errText}`);
+        }
         return res.json();
     }
 
@@ -647,29 +651,36 @@
     document.getElementById('editForm').addEventListener('submit', async (ev) => {
         ev.preventDefault();
         const id = document.getElementById('editId').value;
+        const rawPrice = document.getElementById('editPrice').value;
         const data = {
             title: document.getElementById('editTitle').value,
-            description: document.getElementById('editDescription').value,
+            description: document.getElementById('editDescription').value || null,
             category: document.getElementById('editCategory').value,
             event_language: document.getElementById('editLanguage').value,
             date: document.getElementById('editDate').value || null,
             time: document.getElementById('editTime').value || null,
             venue: document.getElementById('editVenue').value || null,
             address: document.getElementById('editAddress').value || null,
-            price: parseFloat(document.getElementById('editPrice').value) || 0,
+            price: rawPrice !== '' ? parseFloat(rawPrice) : 0,
             ticket_url: document.getElementById('editTicketUrl').value || null,
             registration_url: document.getElementById('editRegistrationUrl').value || null,
             requires_registration: document.getElementById('editRequiresRegistration').checked,
             image_url: document.getElementById('editImageUrl').value || null,
+            is_hot: false,
+            is_active: true,
             status: 'approved',
         };
+        console.log('Отправляем данные:', data);
         try {
-            await updateEvent(id, data);
+            const result = await updateEvent(id, data);
+            console.log('Ответ сервера:', result);
             closeModal();
             showToast('💾 Сохранено и одобрено', '#1e4d1e');
             loadTab(currentTab);
         } catch (e) {
+            console.error('Ошибка:', e);
             showToast('Ошибка сохранения: ' + e.message, '#4d1e1e');
+            alert('Ошибка сохранения: ' + e.message);
         }
     });
 
