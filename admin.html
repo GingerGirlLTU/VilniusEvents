@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Admin — Vilnius Events</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0f0f0f;
+            color: #fff;
+            min-height: 100vh;
+            padding-bottom: 80px;
+        }
+
+        .header {
+            background: #1a1a1a;
+            padding: 16px;
+            border-bottom: 1px solid #2a2a2a;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header h1 { font-size: 18px; font-weight: 700; }
+        .header p { font-size: 12px; color: #888; margin-top: 2px; }
+
+        .tabs {
+            display: flex;
+            background: #1a1a1a;
+            border-bottom: 1px solid #2a2a2a;
+            position: sticky;
+            top: 61px;
+            z-index: 99;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 12px 4px;
+            text-align: center;
+            font-size: 12px;
+            font-weight: 600;
+            color: #888;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tab.active { color: #fff; border-bottom-color: #4CAF50; }
+
+        .tab-count {
+            display: inline-block;
+            background: #333;
+            border-radius: 10px;
+            padding: 1px 6px;
+            font-size: 10px;
+            margin-left: 4px;
+        }
+
+        .tab.active .tab-count { background: #4CAF50; color: #fff; }
+
+        .content { padding: 12px; }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #888;
+        }
+
+        .empty {
+            text-align: center;
+            padding: 60px 20px;
+            color: #555;
+        }
+
+        .empty .icon { font-size: 48px; margin-bottom: 12px; }
+
+        .card {
+            background: #1a1a1a;
+            border-radius: 16px;
+            padding: 14px;
+            margin-bottom: 12px;
+            border: 1px solid #2a2a2a;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+
+        .card-title {
+            font-size: 14px;
+            font-weight: 700;
+            flex: 1;
+            margin-right: 8px;
+            line-height: 1.3;
+        }
+
+        .card-lang {
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .card-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+
+        .badge {
+            background: #252525;
+            border-radius: 8px;
+            padding: 3px 8px;
+            font-size: 11px;
+            color: #aaa;
+        }
+
+        .badge.category { background: #1e2d1e; color: #4CAF50; }
+        .badge.date { background: #1e1e2d; color: #64b5f6; }
+        .badge.price { background: #2d1e1e; color: #ef9a9a; }
+
+        .card-desc {
+            font-size: 12px;
+            color: #888;
+            line-height: 1.5;
+            max-height: 60px;
+            overflow: hidden;
+            margin-bottom: 12px;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            border: none;
+            border-radius: 10px;
+            padding: 8px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .btn:active { opacity: 0.7; }
+
+        .btn-approve { background: #1e4d1e; color: #4CAF50; }
+        .btn-reject { background: #4d1e1e; color: #ef5350; }
+        .btn-edit { background: #1e2d4d; color: #64b5f6; }
+        .btn-pending { background: #2d2d1e; color: #ffd54f; }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 200;
+            overflow-y: auto;
+        }
+
+        .modal-overlay.open { display: block; }
+
+        .modal {
+            background: #1a1a1a;
+            margin: 20px 12px;
+            border-radius: 20px;
+            padding: 20px;
+            border: 1px solid #2a2a2a;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title { font-size: 16px; font-weight: 700; }
+
+        .modal-close {
+            background: #252525;
+            border: none;
+            color: #fff;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .form-group { margin-bottom: 14px; }
+
+        label {
+            display: block;
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            background: #252525;
+            border: 1px solid #333;
+            border-radius: 10px;
+            color: #fff;
+            padding: 10px 12px;
+            font-size: 14px;
+            outline: none;
+            font-family: inherit;
+        }
+
+        input:focus, textarea:focus, select:focus { border-color: #4CAF50; }
+
+        textarea { resize: vertical; min-height: 80px; }
+
+        select option { background: #252525; }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .btn-save {
+            width: 100%;
+            background: #4CAF50;
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            padding: 14px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+
+        .btn-save:active { opacity: 0.8; }
+
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 13px;
+            z-index: 300;
+            opacity: 0;
+            transition: opacity 0.3s;
+            white-space: nowrap;
+        }
+
+        .toast.show { opacity: 1; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>🛠 Admin Panel</h1>
+    <p>Vilnius Events — модерация</p>
+</div>
+
+<div class="tabs">
+    <div class="tab active" onclick="switchTab('pending')">
+        🔍 Модерация <span class="tab-count" id="count-pending">0</span>
+    </div>
+    <div class="tab" onclick="switchTab('approved')">
+        ✅ Одобрены <span class="tab-count" id="count-approved">0</span>
+    </div>
+    <div class="tab" onclick="switchTab('rejected')">
+        ❌ Отклонены <span class="tab-count" id="count-rejected">0</span>
+    </div>
+</div>
+
+<div class="content" id="content">
+    <div class="loading">Загрузка...</div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal-overlay" id="editModal">
+    <div class="modal">
+        <div class="modal-header">
+            <span class="modal-title">✏️ Редактировать</span>
+            <button class="modal-close" onclick="closeModal()">✕</button>
+        </div>
+        <form id="editForm">
+            <input type="hidden" id="editId">
+
+            <div class="form-group">
+                <label>Название</label>
+                <input type="text" id="editTitle" required>
+            </div>
+
+            <div class="form-group">
+                <label>Описание</label>
+                <textarea id="editDescription"></textarea>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Категория</label>
+                    <select id="editCategory">
+                        <option value="other">Другое</option>
+                        <option value="concert">Концерт</option>
+                        <option value="theater">Театр</option>
+                        <option value="exhibition">Выставка</option>
+                        <option value="club">Клуб</option>
+                        <option value="sport">Спорт</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Язык</label>
+                    <select id="editLanguage">
+                        <option value="RU">🇷🇺 RU</option>
+                        <option value="LT">🇱🇹 LT</option>
+                        <option value="EN">🇬🇧 EN</option>
+                        <option value="BY">🇧🇾 BY</option>
+                        <option value="PL">🇵🇱 PL</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Дата</label>
+                    <input type="date" id="editDate">
+                </div>
+                <div class="form-group">
+                    <label>Время</label>
+                    <input type="time" id="editTime">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Место</label>
+                <input type="text" id="editVenue">
+            </div>
+
+            <div class="form-group">
+                <label>Адрес</label>
+                <input type="text" id="editAddress">
+            </div>
+
+            <div class="form-group">
+                <label>Цена (€)</label>
+                <input type="number" id="editPrice" step="0.01" min="0">
+            </div>
+
+            <div class="form-group">
+                <label>Ссылка на билеты</label>
+                <input type="url" id="editTicketUrl">
+            </div>
+
+            <div class="form-group">
+                <label>URL изображения</label>
+                <input type="url" id="editImageUrl">
+            </div>
+
+            <button type="submit" class="btn-save">💾 Сохранить и одобрить</button>
+        </form>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+    const ADMIN_ID = 7010455185;
+    const API = 'https://vilnius-events-api.onrender.com';
+
+    // Auth check
+    const tg = window.Telegram.WebApp;
+    tg.ready();
+    tg.expand();
+
+    const telegramUser = tg.initDataUnsafe?.user;
+    if (!telegramUser || telegramUser.id !== ADMIN_ID) {
+        document.body.innerHTML = `
+            <div style="display:flex;align-items:center;justify-content:center;height:100vh;flex-direction:column;gap:16px;">
+                <div style="font-size:64px;">🚫</div>
+                <h1 style="font-size:20px;">Доступ запрещён</h1>
+                <p style="color:#888;font-size:14px;">Только для администратора</p>
+            </div>`;
+        throw new Error('Unauthorized');
+    }
+
+    let currentTab = 'pending';
+    const langFlags = { RU: '🇷🇺', LT: '🇱🇹', EN: '🇬🇧', BY: '🇧🇾', PL: '🇵🇱', UA: '🇺🇦' };
+
+    const categoryNames = {
+        concert: 'Концерт', theater: 'Театр', exhibition: 'Выставка',
+        club: 'Клуб', sport: 'Спорт', other: 'Другое'
+    };
+
+    async function fetchEvents(status) {
+        const res = await fetch(`${API}/api/events/by-status/${status}`, {
+            headers: { 'X-Telegram-Init-Data': tg.initData }
+        });
+        if (!res.ok) throw new Error(res.status);
+        return res.json();
+    }
+
+    async function changeStatus(id, status) {
+        const res = await fetch(`${API}/api/events/${id}/change-status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Telegram-Init-Data': tg.initData
+            },
+            body: JSON.stringify({ status })
+        });
+        if (!res.ok) throw new Error(res.status);
+        return res.json();
+    }
+
+    async function updateEvent(id, data) {
+        const res = await fetch(`${API}/api/events/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Telegram-Init-Data': tg.initData
+            },
+            body: JSON.stringify(data)
+        });
+        if (!res.ok) throw new Error(res.status);
+        return res.json();
+    }
+
+    function showToast(msg, color = '#333') {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.style.background = color;
+        t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), 2500);
+    }
+
+    function switchTab(tab) {
+        currentTab = tab;
+        document.querySelectorAll('.tab').forEach((el, i) => {
+            el.classList.toggle('active', ['pending','approved','rejected'][i] === tab);
+        });
+        loadTab(tab);
+    }
+
+    async function loadTab(status) {
+        const content = document.getElementById('content');
+        content.innerHTML = '<div class="loading">⏳ Загрузка...</div>';
+        try {
+            const events = await fetchEvents(status);
+            document.getElementById(`count-${status}`).textContent = events.length;
+            renderEvents(events, status);
+        } catch (e) {
+            content.innerHTML = `<div class="empty"><div class="icon">⚠️</div><p>Ошибка загрузки</p><p style="font-size:11px;color:#555;margin-top:8px">${e.message}</p></div>`;
+        }
+    }
+
+    function renderEvents(events, status) {
+        const content = document.getElementById('content');
+        if (!events.length) {
+            const labels = { pending: 'Нет событий на модерации', approved: 'Нет одобренных событий', rejected: 'Нет отклонённых событий' };
+            content.innerHTML = `<div class="empty"><div class="icon">${status === 'pending' ? '🔍' : status === 'approved' ? '✅' : '❌'}</div><p>${labels[status]}</p></div>`;
+            return;
+        }
+
+        content.innerHTML = events.map(e => {
+            const flag = langFlags[e.event_language] || '';
+            const cat = categoryNames[e.category] || e.category;
+            const dateStr = e.date ? new Date(e.date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }) : '';
+            const price = e.price === 0 ? 'Бесплатно' : e.price ? `${e.price}€` : '';
+
+            const actionsPending = `
+                <button class="btn btn-approve" onclick="approve(${e.id})">✅ Одобрить</button>
+                <button class="btn btn-reject" onclick="reject(${e.id})">❌ Отклонить</button>
+                <button class="btn btn-edit" onclick="openEdit(${e.id})">✏️</button>`;
+
+            const actionsApproved = `
+                <button class="btn btn-pending" onclick="toPending(${e.id})">🔄 На модерацию</button>
+                <button class="btn btn-reject" onclick="reject(${e.id})">❌ Отклонить</button>
+                <button class="btn btn-edit" onclick="openEdit(${e.id})">✏️</button>`;
+
+            const actionsRejected = `
+                <button class="btn btn-approve" onclick="approve(${e.id})">✅ Одобрить</button>
+                <button class="btn btn-pending" onclick="toPending(${e.id})">🔄 На модерацию</button>
+                <button class="btn btn-edit" onclick="openEdit(${e.id})">✏️</button>`;
+
+            const actions = status === 'pending' ? actionsPending : status === 'approved' ? actionsApproved : actionsRejected;
+
+            return `
+            <div class="card" id="card-${e.id}">
+                <div class="card-header">
+                    <div class="card-title">${e.title}</div>
+                    <div class="card-lang">${flag}</div>
+                </div>
+                <div class="card-meta">
+                    ${cat ? `<span class="badge category">${cat}</span>` : ''}
+                    ${dateStr ? `<span class="badge date">📅 ${dateStr}${e.time ? ' ' + e.time : ''}</span>` : ''}
+                    ${e.venue ? `<span class="badge">📍 ${e.venue}</span>` : ''}
+                    ${price ? `<span class="badge price">${price}</span>` : ''}
+                </div>
+                ${e.description ? `<div class="card-desc">${e.description}</div>` : ''}
+                <div class="card-actions">${actions}</div>
+            </div>`;
+        }).join('');
+    }
+
+    async function approve(id) {
+        try {
+            await changeStatus(id, 'approved');
+            document.getElementById(`card-${id}`)?.remove();
+            showToast('✅ Одобрено', '#1e4d1e');
+            updateCount();
+        } catch (e) { showToast('Ошибка: ' + e.message, '#4d1e1e'); }
+    }
+
+    async function reject(id) {
+        try {
+            await changeStatus(id, 'rejected');
+            document.getElementById(`card-${id}`)?.remove();
+            showToast('❌ Отклонено', '#4d1e1e');
+            updateCount();
+        } catch (e) { showToast('Ошибка: ' + e.message, '#4d1e1e'); }
+    }
+
+    async function toPending(id) {
+        try {
+            await changeStatus(id, 'pending');
+            document.getElementById(`card-${id}`)?.remove();
+            showToast('🔄 Возвращено на модерацию', '#2d2d1e');
+            updateCount();
+        } catch (e) { showToast('Ошибка: ' + e.message, '#4d1e1e'); }
+    }
+
+    function updateCount() {
+        const cards = document.querySelectorAll('.card').length;
+        document.getElementById(`count-${currentTab}`).textContent = cards;
+    }
+
+    // Edit modal
+    let editEventData = {};
+
+    async function openEdit(id) {
+        try {
+            const res = await fetch(`${API}/api/events/${id}`);
+            const e = await res.json();
+            editEventData = e;
+
+            document.getElementById('editId').value = e.id;
+            document.getElementById('editTitle').value = e.title || '';
+            document.getElementById('editDescription').value = e.description || '';
+            document.getElementById('editCategory').value = e.category || 'other';
+            document.getElementById('editLanguage').value = e.event_language || 'RU';
+            document.getElementById('editDate').value = e.date || '';
+            document.getElementById('editTime').value = e.time || '';
+            document.getElementById('editVenue').value = e.venue || '';
+            document.getElementById('editAddress').value = e.address || '';
+            document.getElementById('editPrice').value = e.price || 0;
+            document.getElementById('editTicketUrl').value = e.ticket_url || '';
+            document.getElementById('editImageUrl').value = e.image_url || '';
+
+            document.getElementById('editModal').classList.add('open');
+        } catch (err) {
+            showToast('Ошибка загрузки события', '#4d1e1e');
+        }
+    }
+
+    function closeModal() {
+        document.getElementById('editModal').classList.remove('open');
+    }
+
+    document.getElementById('editForm').addEventListener('submit', async (ev) => {
+        ev.preventDefault();
+        const id = document.getElementById('editId').value;
+        const data = {
+            title: document.getElementById('editTitle').value,
+            description: document.getElementById('editDescription').value,
+            category: document.getElementById('editCategory').value,
+            event_language: document.getElementById('editLanguage').value,
+            date: document.getElementById('editDate').value || null,
+            time: document.getElementById('editTime').value || null,
+            venue: document.getElementById('editVenue').value || null,
+            address: document.getElementById('editAddress').value || null,
+            price: parseFloat(document.getElementById('editPrice').value) || 0,
+            ticket_url: document.getElementById('editTicketUrl').value || null,
+            image_url: document.getElementById('editImageUrl').value || null,
+            status: 'approved',
+        };
+        try {
+            await updateEvent(id, data);
+            closeModal();
+            showToast('💾 Сохранено и одобрено', '#1e4d1e');
+            loadTab(currentTab);
+        } catch (e) {
+            showToast('Ошибка сохранения: ' + e.message, '#4d1e1e');
+        }
+    });
+
+    // Init
+    loadTab('pending');
+    // Preload counts for other tabs
+    ['approved', 'rejected'].forEach(async s => {
+        try {
+            const evs = await fetchEvents(s);
+            document.getElementById(`count-${s}`).textContent = evs.length;
+        } catch {}
+    });
+</script>
+</body>
+</html>
