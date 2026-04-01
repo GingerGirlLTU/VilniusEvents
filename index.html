@@ -275,6 +275,15 @@
             box-shadow: 0 4px 12px rgba(255, 217, 61, 0.3);
         }
 
+        .language-flag {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            font-size: 20px;
+            line-height: 1;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+        }
+
         .fav-btn {
             position: absolute;
             top: 10px;
@@ -669,7 +678,7 @@
         let tg = window.Telegram.WebApp;
         tg.ready();
         tg.expand();
-        const API_URL = 'https://web-production-75760.up.railway.app';
+        const API_URL = 'https://vilnius-events-api.onrender.com';
 let mockEvents = [];
 
 async function loadEventsFromAPI() {
@@ -759,15 +768,22 @@ loadEventsFromAPI();
 
                 const isFavorite = favorites.includes(event.id);
                 const regUrls = parseRegistrationUrls(event.description, event.ticket_url);
-                const hasRegUrl = regUrls.length > 0;
-                const hasRegKw = hasRegistrationKeyword(event.description);
+                const hasRegUrl = regUrls.length > 0 || !!event.registration_url;
+                const hasRegKw = hasRegistrationKeyword(event.description) || !!event.requires_registration;
                 const showRegBtn = hasRegUrl || hasRegKw;
-                const regUrl = hasRegUrl ? regUrls[0].url : null;
+                const regUrl = event.registration_url || (regUrls.length > 0 ? regUrls[0].url : null);
+
+                const languageFlags = {
+                    'RU': '🇷🇺', 'LT': '🇱🇹', 'EN': '🇬🇧',
+                    'BY': '🇧🇾', 'PL': '🇵🇱', 'UA': '🇺🇦'
+                };
+                const langFlag = languageFlags[event.event_language] || '';
 
                 eventCard.innerHTML = `
                     <div class="event-image-placeholder" style="background: ${event.gradient}">
                         <span style="font-size: 72px;">${event.icon}</span>
                         ${event.is_hot ? '<div class="event-badge">HOT</div>' : ''}
+                        ${langFlag ? `<div class="language-flag">${langFlag}</div>` : ''}
                         <button class="fav-btn ${isFavorite ? 'active' : ''}" data-fav-id="${event.id}">${isFavorite ? '★' : '☆'}</button>
                     </div>
                     <div class="event-content">
