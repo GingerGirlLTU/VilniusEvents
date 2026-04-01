@@ -237,20 +237,49 @@
             gap: 10px;
         }
 
+        .form-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
         .btn-save {
-            width: 100%;
+            flex: 2;
             background: #4CAF50;
             color: #fff;
             border: none;
             border-radius: 12px;
             padding: 14px;
-            font-size: 15px;
+            font-size: 14px;
             font-weight: 700;
             cursor: pointer;
-            margin-top: 8px;
         }
 
-        .btn-save:active { opacity: 0.8; }
+        .btn-cancel {
+            flex: 1;
+            background: #252525;
+            color: #aaa;
+            border: none;
+            border-radius: 12px;
+            padding: 14px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .btn-reject-form {
+            flex: 1;
+            background: #4d1e1e;
+            color: #ef5350;
+            border: none;
+            border-radius: 12px;
+            padding: 14px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .btn-save:active, .btn-cancel:active, .btn-reject-form:active { opacity: 0.7; }
 
         .card-preview-btns {
             display: flex;
@@ -427,7 +456,11 @@
                 <input type="url" id="editImageUrl">
             </div>
 
-            <button type="submit" class="btn-save">💾 Сохранить и одобрить</button>
+            <div class="form-actions">
+                <button type="button" class="btn-cancel" onclick="closeModal()">Отмена</button>
+                <button type="button" class="btn-reject-form" onclick="saveAndReject()">❌ Отклонить</button>
+                <button type="submit" class="btn-save">✅ Сохранить</button>
+            </div>
         </form>
     </div>
 </div>
@@ -651,8 +684,24 @@
     document.getElementById('editForm').addEventListener('submit', async (ev) => {
         ev.preventDefault();
         const id = document.getElementById('editId').value;
+        const data = { ...getFormData(), status: 'approved' };
+        console.log('Отправляем данные:', data);
+        try {
+            const result = await updateEvent(id, data);
+            console.log('Ответ сервера:', result);
+            closeModal();
+            showToast('💾 Сохранено и одобрено', '#1e4d1e');
+            loadTab(currentTab);
+        } catch (e) {
+            console.error('Ошибка:', e);
+            showToast('Ошибка сохранения: ' + e.message, '#4d1e1e');
+            alert('Ошибка сохранения: ' + e.message);
+        }
+    });
+
+    function getFormData() {
         const rawPrice = document.getElementById('editPrice').value;
-        const data = {
+        return {
             title: document.getElementById('editTitle').value,
             description: document.getElementById('editDescription').value || null,
             category: document.getElementById('editCategory').value,
@@ -668,21 +717,24 @@
             image_url: document.getElementById('editImageUrl').value || null,
             is_hot: false,
             is_active: true,
-            status: 'approved',
         };
-        console.log('Отправляем данные:', data);
+    }
+
+    async function saveAndReject() {
+        const id = document.getElementById('editId').value;
+        const data = { ...getFormData(), status: 'rejected' };
         try {
-            const result = await updateEvent(id, data);
-            console.log('Ответ сервера:', result);
+            await updateEvent(id, data);
+            await changeStatus(id, 'rejected');
             closeModal();
-            showToast('💾 Сохранено и одобрено', '#1e4d1e');
+            showToast('❌ Отклонено и сохранено', '#4d1e1e');
             loadTab(currentTab);
         } catch (e) {
             console.error('Ошибка:', e);
-            showToast('Ошибка сохранения: ' + e.message, '#4d1e1e');
-            alert('Ошибка сохранения: ' + e.message);
+            showToast('Ошибка: ' + e.message, '#4d1e1e');
+            alert('Ошибка: ' + e.message);
         }
-    });
+    }
 
     // Init
     loadTab('pending');
